@@ -1,0 +1,70 @@
+import piplite
+await piplite.install(['numpy'],['pandas'])
+await piplite.install(['seaborn'])
+
+import pandas as pd
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as pyplot
+import scipy.stats
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from js import fetch
+import io
+
+URL = 'https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ST0151EN-SkillsNetwork/labs/boston_housing.csv'
+resp = await fetch(URL)
+boston_url = io.BytesIO((await resp.arrayBuffer()).to_py())
+
+boston_df=pd.read_csv(boston_url)
+boston_df.head(5)
+boston_df.info()
+boston_df.shape
+boston_df.describe()
+
+sns.boxplot(x="MEDV", data=boston_df)
+plt.title('Median value of owner-occupied homes in $1000´s')
+plt.show()
+
+sns.catplot(x='CHAS',  kind='count', data=boston_df)
+plt.title('Charles River')
+plt.show()
+
+bins = [0,36,70,150] 
+nons = ['35-', '35-70', '70+']
+boston_df['age'] = pd.cut(boston_df['AGE'], bins, labels=nons)
+sns.boxplot(x="MEDV", y="age", data=boston_df)
+plt.title("MEDV x Age Range")
+plt.show()
+
+sns.scatterplot(x='NOX', y='INDUS',data=boston_df)
+plt.title("NOX vs INDUS")
+plt.show()
+#No linear relationship
+
+sns.distplot(boston_df['PTRATIO'], kde = False)
+plt.title("Pupil-teacher ratio by town")
+plt.show()
+
+scipy.stats.ttest_ind(boston_df[boston_df['CHAS'] == 0]["MEDV"],
+                   boston_df[boston_df['CHAS'] == 1]["MEDV"], equal_var = True)
+#There is a significant difference because p_value is less than .05
+
+tf_lower=boston_df[boston_df['age'] == '35-']["MEDV"]
+tf_sv=boston_df[boston_df['age'] == '35-70']["MEDV"]
+sv_older=boston_df[boston_df['age'] == '70+']["MEDV"]
+f_statistic, p_value = scipy.stats.f_oneway(tf_lower, tf_sv, sv_older)
+print("F_Statistic: {0}, P-Value: {1}".format(f_statistic,p_value))
+#There is a difference because p_value is less than .05
+
+scipy.stats.pearsonr(boston_df['NOX'], boston_df['INDUS'])
+#We can conclude that there are relationship between Nox and Indus because p_value is less than .05
+
+X = boston_df['DIS']
+y = boston_df['MEDV']
+X = sm.add_constant(X) 
+
+model = sm.OLS(y, X).fit()
+predictions = model.predict(X)
+model.summary()
+
